@@ -46,7 +46,7 @@ type ClassSchedules = Record<string, ScheduleItem[]>;
 
 const STORAGE_CLASS_PRICES = "operator_class_prices";
 const STORAGE_CLASS_SCHEDULES = "operator_class_schedules";
-const STORAGE_UKT_PRICE = "operator_ukt_price";
+const STORAGE_SPP_PRICE = "operator_spp_price";
 const STORAGE_BANKS = "operator_banks";
 const STORAGE_SCHOOL_PROFILE = "operator_school_profile";
 
@@ -136,7 +136,7 @@ function getClassKey(kelas?: string | number) {
   return `Kelas ${match[0]}`;
 }
 
-function getUktPriceByClass(classPrices: ClassPrices, kelas?: string | number) {
+function getSppPriceByClass(classPrices: ClassPrices, kelas?: string | number) {
   const key = getClassKey(kelas);
   return classPrices[key] || DEFAULT_CLASS_PRICES[key] || 150000;
 }
@@ -159,8 +159,8 @@ export default function Dashboard() {
   const router = useRouter();
 
   const studentClass = getClassKey(user?.kelas);
-  const studentUktPrice = user
-    ? getUktPriceByClass(classPrices, user.kelas)
+  const studentSppPrice = user
+    ? getSppPriceByClass(classPrices, user.kelas)
     : DEFAULT_CLASS_PRICES["Kelas 1"];
 
   const studentSchedule =
@@ -189,7 +189,7 @@ export default function Dashboard() {
   useEffect(() => {
     const loadOperatorData = () => {
       const savedClassPrices = localStorage.getItem(STORAGE_CLASS_PRICES);
-      const savedOldPrice = localStorage.getItem(STORAGE_UKT_PRICE);
+      const savedOldPrice = localStorage.getItem(STORAGE_SPP_PRICE);
       const savedClassSchedules = localStorage.getItem(STORAGE_CLASS_SCHEDULES);
       const savedBanks = localStorage.getItem(STORAGE_BANKS);
       const savedProfile = localStorage.getItem(STORAGE_SCHOOL_PROFILE);
@@ -238,7 +238,7 @@ export default function Dashboard() {
       if (
         e.key === STORAGE_CLASS_PRICES ||
         e.key === STORAGE_CLASS_SCHEDULES ||
-        e.key === STORAGE_UKT_PRICE ||
+        e.key === STORAGE_SPP_PRICE ||
         e.key === STORAGE_BANKS ||
         e.key === STORAGE_SCHOOL_PROFILE
       ) {
@@ -262,8 +262,8 @@ export default function Dashboard() {
   const pageTitle =
     menu === "profilSekolah"
       ? "Profil Sekolah"
-      : menu === "ukt"
-      ? "Pembayaran UKT"
+      : menu === "spp"
+      ? "Pembayaran SPP"
       : menu === "jadwal"
       ? "Jadwal Pelajaran"
       : "Profil Siswa";
@@ -285,7 +285,7 @@ export default function Dashboard() {
 
                 <div>
                   <h1 className="text-[18px] font-extrabold leading-tight text-[#06442e]">
-                    Portal UKT
+                    Portal SPP
                   </h1>
                   <p className="mt-0.5 text-[12px] font-medium text-slate-500">
                     Masyarikul Anwar
@@ -308,10 +308,10 @@ export default function Dashboard() {
                 />
 
                 <MenuButton
-                  active={menu === "ukt"}
+                  active={menu === "spp"}
                   icon={<Wallet size={18} />}
-                  label="Pembayaran UKT"
-                  onClick={() => setMenu("ukt")}
+                  label="Pembayaran SPP"
+                  onClick={() => setMenu("spp")}
                 />
 
                 <MenuButton
@@ -386,11 +386,11 @@ export default function Dashboard() {
             <section className="mb-6 grid grid-cols-3 gap-5">
               <SummaryCard
                 title={`Total Tagihan ${studentClass}`}
-                value={formatRupiah(studentUktPrice * DEFAULT_BILLS.length)}
+                value={formatRupiah(studentSppPrice * DEFAULT_BILLS.length)}
               />
               <SummaryCard
-                title="UKT per Bulan"
-                value={formatRupiah(studentUktPrice)}
+                title="SPP per Bulan"
+                value={formatRupiah(studentSppPrice)}
               />
               <SummaryCard title="Tahun Ajaran" value="2025 / 2026" />
             </section>
@@ -399,10 +399,10 @@ export default function Dashboard() {
               <ProfilSekolah schoolProfile={schoolProfile} />
             )}
 
-            {menu === "ukt" && (
-              <UKTComponent
+            {menu === "spp" && (
+              <SPPComponent
                 user={user}
-                uktPrice={studentUktPrice}
+                sppPrice={studentSppPrice}
                 banks={banks}
               />
             )}
@@ -520,13 +520,13 @@ function InfoBox({ title, value }: { title: string; value: string }) {
   );
 }
 
-function UKTComponent({
+function SPPComponent({
   user,
-  uktPrice,
+  sppPrice,
   banks,
 }: {
   user: any;
-  uktPrice: number;
+  sppPrice: number;
   banks: BankItem[];
 }) {
   const [bills, setBills] = useState<Bill[]>(DEFAULT_BILLS);
@@ -619,7 +619,7 @@ function UKTComponent({
     formData.append("bulan", bill.bulan);
     formData.append("status", "pending");
     formData.append("bank", selectedBank);
-    formData.append("nominal", String(uktPrice));
+    formData.append("nominal", String(sppPrice));
 
     try {
       const response = await fetch("/api/upload", {
@@ -644,7 +644,7 @@ function UKTComponent({
         nisn: user.nisn || "",
         bulan: bill.bulan,
         status: "pending",
-        nominal: uktPrice,
+        nominal: sppPrice,
         bank: selectedBank,
         proof: result.proof,
         proofName: file.name,
@@ -683,7 +683,7 @@ function UKTComponent({
     <section className="rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-6">
         <h2 className="text-[24px] font-extrabold text-[#06442e]">
-          Pembayaran UKT
+          Pembayaran SPP
         </h2>
         <p className="mt-1 text-sm text-slate-500">
           Pilih bank lalu upload bukti pembayaran.
@@ -711,10 +711,10 @@ function UKTComponent({
 
             <div className="mb-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
               <p className="text-sm font-semibold text-emerald-700">
-                Nominal UKT Bulan Ini
+                Nominal SPP Bulan Ini
               </p>
               <h4 className="mt-1 text-xl font-extrabold text-[#06442e]">
-                {formatRupiah(uktPrice)}
+                {formatRupiah(sppPrice)}
               </h4>
             </div>
 
