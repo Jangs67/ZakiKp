@@ -97,7 +97,7 @@ export default function LoginPage() {
               <span>Sistem Pembayaran Resmi Madrasah</span>
             </div>
 
-            <h1>Pembayaran UKT Lebih Mudah & Transparan</h1>
+            <h1>Pembayaran SPP Lebih Mudah & Transparan</h1>
 
             <p>
               Kelola kewajiban administrasi akademik Anda dalam satu platform
