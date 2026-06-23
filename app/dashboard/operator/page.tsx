@@ -27,9 +27,9 @@ type Payment = {
 };
 
 const STORAGE_STUDENTS = "operator_students";
-const STORAGE_UKT_PRICE = "operator_ukt_price";
+const STORAGE_SPP_PRICE = "operator_spp_price";
 const DEMO_PAYMENTS_KEY = "demo_payments";
-const DEFAULT_UKT_PRICE = 200000;
+const DEFAULT_SPP_PRICE = 200000;
 
 function formatRupiah(value: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -59,8 +59,8 @@ export default function OperatorPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-  const [uktPrice, setUktPrice] = useState(DEFAULT_UKT_PRICE);
-  const [uktInput, setUktInput] = useState(String(DEFAULT_UKT_PRICE));
+  const [sppPrice, setSppPrice] = useState(DEFAULT_SPP_PRICE);
+  const [sppInput, setSppInput] = useState(String(DEFAULT_SPP_PRICE));
 
   const [proofModal, setProofModal] = useState<Payment | null>(null);
 
@@ -80,7 +80,7 @@ export default function OperatorPage() {
     }
 
     const savedStudents = localStorage.getItem(STORAGE_STUDENTS);
-    const savedPrice = localStorage.getItem(STORAGE_UKT_PRICE);
+    const savedPrice = localStorage.getItem(STORAGE_SPP_PRICE);
 
     if (savedStudents) {
       setStudents(JSON.parse(savedStudents));
@@ -90,10 +90,10 @@ export default function OperatorPage() {
     }
 
     if (savedPrice) {
-      setUktPrice(Number(savedPrice));
-      setUktInput(savedPrice);
+      setSppPrice(Number(savedPrice));
+      setSppInput(savedPrice);
     } else {
-      localStorage.setItem(STORAGE_UKT_PRICE, String(DEFAULT_UKT_PRICE));
+      localStorage.setItem(STORAGE_SPP_PRICE, String(DEFAULT_SPP_PRICE));
     }
 
     setAuthorized(true);
@@ -129,7 +129,7 @@ export default function OperatorPage() {
           kelas: matchedStudent.kelas,
           nisn: matchedStudent.nisn,
           status: payment.status || "pending",
-          nominal: payment.nominal || uktPrice,
+          nominal: payment.nominal || sppPrice,
         });
       }
 
@@ -147,7 +147,7 @@ export default function OperatorPage() {
       window.removeEventListener("focus", loadPayments);
       window.removeEventListener("storage", loadPayments);
     };
-  }, [authorized, students, uktPrice]);
+  }, [authorized, students, sppPrice]);
 
   const saveStudents = (nextStudents: Student[]) => {
     setStudents(nextStudents);
@@ -177,9 +177,9 @@ export default function OperatorPage() {
   const pendingCount = students.filter((s) => getStatus(s) === "pending").length;
   const unpaidCount = students.filter((s) => getStatus(s) === "unpaid").length;
 
-  const totalTagihan = students.length * uktPrice;
-  const totalTerbayar = paidCount * uktPrice;
-  const totalBelumTerbayar = (pendingCount + unpaidCount) * uktPrice;
+  const totalTagihan = students.length * sppPrice;
+  const totalTerbayar = paidCount * sppPrice;
+  const totalBelumTerbayar = (pendingCount + unpaidCount) * sppPrice;
 
   const filteredStudents = students.filter((student) => {
     const keyword = search.toLowerCase();
@@ -323,22 +323,22 @@ export default function OperatorPage() {
     );
   };
 
-  const handleSaveUktPrice = (e: any) => {
+  const handleSaveSppPrice = (e: any) => {
     e.preventDefault();
 
-    const cleanValue = uktInput.replace(/\D/g, "");
+    const cleanValue = sppInput.replace(/\D/g, "");
     const newPrice = Number(cleanValue);
 
     if (!newPrice || newPrice < 1) {
-      alert("Harga UKT tidak valid.");
+      alert("Harga SPP tidak valid.");
       return;
     }
 
-    setUktPrice(newPrice);
-    setUktInput(String(newPrice));
-    localStorage.setItem(STORAGE_UKT_PRICE, String(newPrice));
+    setSppPrice(newPrice);
+    setSppInput(String(newPrice));
+    localStorage.setItem(STORAGE_SPP_PRICE, String(newPrice));
 
-    alert("Harga UKT berhasil diperbarui.");
+    alert("Harga SPP berhasil diperbarui.");
   };
 
   const handleVerifyPayment = (student: Student) => {
@@ -357,7 +357,7 @@ export default function OperatorPage() {
         kelas: student.kelas,
         nisn: student.nisn,
         status: "paid",
-        nominal: uktPrice,
+        nominal: sppPrice,
       };
     } else {
       nextPayments.push({
@@ -366,7 +366,7 @@ export default function OperatorPage() {
         nisn: student.nisn,
         bulan: "Manual",
         status: "paid",
-        nominal: uktPrice,
+        nominal: sppPrice,
         createdAt: new Date().toISOString(),
       });
     }
@@ -457,7 +457,7 @@ export default function OperatorPage() {
                 />
                 <OperatorMenu
                   active={activeMenu === "harga"}
-                  label="Harga UKT"
+                  label="Harga SPP"
                   onClick={() => setActiveMenu("harga")}
                 />
                 <OperatorMenu
@@ -493,7 +493,7 @@ export default function OperatorPage() {
                   Dashboard Operator
                 </h1>
                 <p className="mt-2 text-sm text-slate-500">
-                  Kelola siswa, pembayaran, harga UKT, dan rekap pembayaran.
+                  Kelola siswa, pembayaran, harga SPP, dan rekap pembayaran.
                 </p>
               </div>
 
@@ -522,7 +522,7 @@ export default function OperatorPage() {
           </section>
 
           <section className="mb-6 grid grid-cols-3 gap-5">
-            <MoneyCard title="Harga UKT Aktif" value={formatRupiah(uktPrice)} />
+            <MoneyCard title="Harga SPP Aktif" value={formatRupiah(sppPrice)} />
             <MoneyCard
               title="Total Terbayar"
               value={formatRupiah(totalTerbayar)}
@@ -542,7 +542,7 @@ export default function OperatorPage() {
                   {activeMenu === "dashboard" && "Ringkasan Data"}
                   {activeMenu === "siswa" && "Kelola Data Siswa"}
                   {activeMenu === "pembayaran" && "Data Pembayaran"}
-                  {activeMenu === "harga" && "Pengaturan Harga UKT"}
+                  {activeMenu === "harga" && "Pengaturan Harga SPP"}
                   {activeMenu === "rekap" && "Rekap Pembayaran"}
                 </h2>
                 <p className="mt-2 text-sm text-slate-500">
@@ -644,20 +644,20 @@ export default function OperatorPage() {
 
           {activeMenu === "harga" && (
             <section className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm">
-              <h2 className="text-2xl font-black">Pengaturan Harga UKT</h2>
+              <h2 className="text-2xl font-black">Pengaturan Harga SPP</h2>
               <p className="mt-2 text-sm text-slate-500">
-                Jika harga UKT diubah, halaman siswa akan ikut berubah.
+                Jika harga SPP diubah, halaman siswa akan ikut berubah.
               </p>
 
               <form
-                onSubmit={handleSaveUktPrice}
+                onSubmit={handleSaveSppPrice}
                 className="mt-6 flex max-w-[620px] items-end gap-4"
               >
                 <label className="flex-1 text-sm font-bold text-slate-600">
-                  Harga UKT Baru
+                  Harga SPP Baru
                   <input
-                    value={uktInput}
-                    onChange={(e) => setUktInput(e.target.value)}
+                    value={sppInput}
+                    onChange={(e) => setSppInput(e.target.value)}
                     className="mt-2 h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#063d2b]"
                   />
                 </label>
@@ -691,7 +691,7 @@ export default function OperatorPage() {
                 students={filteredStudents}
                 getStatus={getStatus}
                 getPaymentByStudent={getPaymentByStudent}
-                uktPrice={uktPrice}
+                sppPrice={sppPrice}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onVerify={handleVerifyPayment}
@@ -721,7 +721,7 @@ export default function OperatorPage() {
               ) : filteredPayments.length > 0 ? (
                 <PaymentTable
                   payments={filteredPayments}
-                  uktPrice={uktPrice}
+                  sppPrice={sppPrice}
                   onViewProof={setProofModal}
                   onVerify={handleVerifyFromPayment}
                 />
@@ -742,7 +742,7 @@ export default function OperatorPage() {
 
               <div className="mb-6 grid grid-cols-4 gap-4">
                 <RekapBox title="Total Tagihan" value={formatRupiah(totalTagihan)} />
-                <RekapBox title="Harga UKT" value={formatRupiah(uktPrice)} />
+                <RekapBox title="Harga SPP" value={formatRupiah(sppPrice)} />
                 <RekapBox title="Sudah Bayar" value={String(paidCount)} />
                 <RekapBox title="Belum Bayar" value={String(unpaidCount)} />
               </div>
@@ -751,7 +751,7 @@ export default function OperatorPage() {
                 students={filteredStudents}
                 getStatus={getStatus}
                 getPaymentByStudent={getPaymentByStudent}
-                getNominal={() => uktPrice}
+                getNominal={() => sppPrice}
                 onViewProof={setProofModal}
               />
             </section>
@@ -932,7 +932,7 @@ function StudentTable({
   students,
   getStatus,
   getPaymentByStudent,
-  uktPrice,
+  sppPrice,
   onEdit,
   onDelete,
   onVerify,
@@ -943,7 +943,7 @@ function StudentTable({
   students: Student[];
   getStatus: (student: Student) => string;
   getPaymentByStudent: (student: Student) => Payment | undefined;
-  uktPrice: number;
+  sppPrice: number;
   onEdit: (student: Student) => void;
   onDelete: (student: Student) => void;
   onVerify: (student: Student) => void;
@@ -982,7 +982,7 @@ function StudentTable({
                 <td className="p-4 font-black">{student.nama}</td>
                 <td className="p-4">{student.kelas}</td>
                 <td className="p-4">{student.nisn}</td>
-                <td className="p-4">{formatRupiah(uktPrice)}</td>
+                <td className="p-4">{formatRupiah(sppPrice)}</td>
                 <td className="p-4">
                   <StatusBadge status={status} />
                 </td>
@@ -1046,12 +1046,12 @@ function StudentTable({
 
 function PaymentTable({
   payments,
-  uktPrice,
+  sppPrice,
   onViewProof,
   onVerify,
 }: {
   payments: Payment[];
-  uktPrice: number;
+  sppPrice: number;
   onViewProof: (payment: Payment) => void;
   onVerify: (payment: Payment) => void;
 }) {
@@ -1076,7 +1076,7 @@ function PaymentTable({
               <td className="p-4 font-black">{payment.nama}</td>
               <td className="p-4">{payment.kelas}</td>
               <td className="p-4">{payment.bulan}</td>
-              <td className="p-4">{formatRupiah(payment.nominal || uktPrice)}</td>
+              <td className="p-4">{formatRupiah(payment.nominal || sppPrice)}</td>
               <td className="p-4">
                 <StatusBadge status={payment.status || "pending"} />
               </td>
