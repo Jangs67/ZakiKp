@@ -53,7 +53,7 @@ type ClassSchedules = Record<string, ScheduleItem[]>;
 const STORAGE_STUDENTS = "operator_students";
 const STORAGE_CLASS_PRICES = "operator_class_prices";
 const STORAGE_CLASS_SCHEDULES = "operator_class_schedules";
-const STORAGE_UKT_PRICE = "operator_ukt_price";
+const STORAGE_SPP_PRICE = "operator_spp_price";
 const STORAGE_BANKS = "operator_banks";
 const STORAGE_SCHOOL_PROFILE = "operator_school_profile";
 const DEMO_PAYMENTS_KEY = "demo_payments";
@@ -257,7 +257,7 @@ export default function OperatorPage() {
 
     const savedStudents = localStorage.getItem(STORAGE_STUDENTS);
     const savedClassPrices = localStorage.getItem(STORAGE_CLASS_PRICES);
-    const savedOldPrice = localStorage.getItem(STORAGE_UKT_PRICE);
+    const savedOldPrice = localStorage.getItem(STORAGE_SPP_PRICE);
     const savedClassSchedules = localStorage.getItem(STORAGE_CLASS_SCHEDULES);
     const savedBanks = localStorage.getItem(STORAGE_BANKS);
     const savedProfile = localStorage.getItem(STORAGE_SCHOOL_PROFILE);
@@ -1135,7 +1135,7 @@ export default function OperatorPage() {
               <span>Panel Operator</span>
               <h1>Dashboard Operator</h1>
               <p>
-                Kelola siswa, pembayaran, harga UKT per kelas, jadwal per kelas,
+                Kelola siswa, pembayaran, harga SPP per kelas, jadwal per kelas,
                 rekening, dan profil sekolah.
               </p>
             </div>
@@ -1162,7 +1162,7 @@ export default function OperatorPage() {
 
           <section className="money-grid">
             <MoneyCard
-              title={`UKT ${selectedClass}`}
+              title={`SPP ${selectedClass}`}
               value={formatRupiah(
                 classPrices[selectedClass] || DEFAULT_CLASS_PRICES[selectedClass]
               )}
@@ -1184,7 +1184,7 @@ export default function OperatorPage() {
               <h2>
                 {activeMenu === "dashboard" && "Ringkasan Data"}
                 {activeMenu === "siswa" && "Kelola Data Siswa"}
-                {activeMenu === "kelas" && "Kelola Harga UKT dan Jadwal Per Kelas"}
+                {activeMenu === "kelas" && "Kelola Harga SPP dan Jadwal Per Kelas"}
                 {activeMenu === "pembayaran" && "Data Pembayaran"}
                 {activeMenu === "rekening" && "Pengaturan Rekening Pembayaran"}
                 {activeMenu === "profilSekolah" && "Pengaturan Profil Sekolah"}
@@ -1295,7 +1295,7 @@ export default function OperatorPage() {
                 <div>
                   <h2>Kelola Kelas</h2>
                   <p>
-                    Pilih kelas, lalu ubah harga UKT dan jadwal pelajaran untuk
+                    Pilih kelas, lalu ubah harga SPP dan jadwal pelajaran untuk
                     kelas tersebut.
                   </p>
                 </div>
@@ -1315,7 +1315,7 @@ export default function OperatorPage() {
 
               <div className="class-panel">
                 <div className="class-price-box">
-                  <h3>Harga UKT {selectedClass}</h3>
+                  <h3>Harga SPP {selectedClass}</h3>
                   <p>
                     Harga ini akan tampil hanya untuk siswa yang berada di{" "}
                     {selectedClass}.
