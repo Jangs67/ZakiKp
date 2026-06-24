@@ -1,10 +1,16 @@
+// app/api/upload/route.ts
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { v2 as cloudinary } from "cloudinary";
 import { connectDB } from "@/lib/mongodb";
 import Bill from "@/models/Bill";
 
 export const runtime = "nodejs";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(req: Request) {
   try {
@@ -33,17 +39,17 @@ export async function POST(req: Request) {
       );
     }
 
+    // ✅ Convert file ke base64 dan upload ke Cloudinary
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadDir, { recursive: true });
+    const uploadResult = await cloudinary.uploader.upload(base64, {
+      folder: "bukti-pembayaran",
+      resource_type: "image",
+    });
 
-    const safeFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const fileName = `${Date.now()}-${safeFileName}`;
-    const filePath = path.join(uploadDir, fileName);
-
-    await writeFile(filePath, buffer);
+    const imageUrl = uploadResult.secure_url; // URL permanen dari Cloudinary
 
     await connectDB();
 
@@ -57,7 +63,7 @@ export async function POST(req: Request) {
         status,
         bank,
         nominal: Number(nominal),
-        proof: fileName,
+        proof: imageUrl, // ✅ simpan URL bukan nama file
       },
       {
         upsert: true,
@@ -68,11 +74,11 @@ export async function POST(req: Request) {
     return NextResponse.json({
       message: "Upload berhasil",
       bill,
-      proof: fileName,
+      proof: imageUrl, // ✅ return URL
     });
+
   } catch (error) {
     console.error("UPLOAD API ERROR:", error);
-
     return NextResponse.json(
       { message: "Terjadi kesalahan saat upload bukti pembayaran" },
       { status: 500 }
