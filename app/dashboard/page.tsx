@@ -531,6 +531,8 @@ function SPPComponent({
 }) {
   const [bills, setBills] = useState<Bill[]>(DEFAULT_BILLS);
   const [selectedBanks, setSelectedBanks] = useState<Record<string, string>>({});
+  const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
+  const [bulkProofName, setBulkProofName] = useState("");
 
   const bankOptions = banks.length > 0 ? banks : DEFAULT_BANKS;
 
@@ -608,15 +610,15 @@ function SPPComponent({
       return;
     }
 
-    const bill = bills[index];
-    const selectedBank = getBankValue(bill.bulan);
+    const selectedBank = getBankValue(bills[index].bulan);
+    const selectedMonthsToUpload = selectedMonths.length > 0 ? selectedMonths : [bills[index].bulan];
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("nama", user.nama || "");
     formData.append("kelas", user.kelas || "");
     formData.append("nisn", user.nisn || "");
-    formData.append("bulan", bill.bulan);
+    selectedMonthsToUpload.forEach((month) => formData.append("bulan", month));
     formData.append("status", "pending");
     formData.append("bank", selectedBank);
     formData.append("nominal", String(sppPrice));
@@ -634,43 +636,60 @@ function SPPComponent({
       }
 
       const result = await response.json();
+      const uploadedMonths: string[] = Array.isArray(result.bills)
+        ? result.bills.map((bill: any) => bill.bulan)
+        : [bills[index].bulan];
 
       const savedPayments = localStorage.getItem(DEMO_PAYMENTS_KEY);
       const payments = safeJsonParse<any[]>(savedPayments, []);
 
-      const newPayment = {
-        nama: user.nama || "",
-        kelas: user.kelas || "",
-        nisn: user.nisn || "",
-        bulan: bill.bulan,
-        status: "pending",
-        nominal: sppPrice,
-        bank: selectedBank,
-        proof: result.proof,
-        proofName: file.name,
-        createdAt: new Date().toISOString(),
-      };
+      const nextPayments = [...payments];
 
-      const existingIndex = payments.findIndex(
-        (payment: any) =>
-          payment.nisn?.toString() === user.nisn?.toString() &&
-          payment.bulan === bill.bulan
-      );
+      for (const month of uploadedMonths) {
+        const paymentData = {
+          nama: user.nama || "",
+          kelas: user.kelas || "",
+          nisn: user.nisn || "",
+          bulan: month,
+          status: "pending",
+          nominal: sppPrice,
+          bank: selectedBank,
+          proof: result.proof,
+          proofName: file.name,
+          createdAt: new Date().toISOString(),
+        };
 
-      if (existingIndex >= 0) {
-        payments[existingIndex] = newPayment;
-      } else {
-        payments.push(newPayment);
+        const existingIndex = nextPayments.findIndex(
+          (payment: any) =>
+            payment.nisn?.toString() === user.nisn?.toString() &&
+            payment.bulan === month
+        );
+
+        if (existingIndex >= 0) {
+          nextPayments[existingIndex] = paymentData;
+        } else {
+          nextPayments.push(paymentData);
+        }
       }
 
-      localStorage.setItem(DEMO_PAYMENTS_KEY, JSON.stringify(payments));
+      localStorage.setItem(DEMO_PAYMENTS_KEY, JSON.stringify(nextPayments));
 
-      const newBills = [...bills];
-      newBills[index].status = "Menunggu Verifikasi";
-      newBills[index].file = file;
-      newBills[index].fileName = file.name;
+      setBills((currentBills) =>
+        currentBills.map((bill) => {
+          if (uploadedMonths.includes(bill.bulan)) {
+            return {
+              ...bill,
+              status: "Menunggu Verifikasi",
+              file: file,
+              fileName: file.name,
+            };
+          }
+          return bill;
+        })
+      );
 
-      setBills(newBills);
+      setBulkProofName(file.name);
+      setSelectedMonths([]);
 
       alert("Bukti pembayaran berhasil diupload. Menunggu verifikasi operator.");
     } catch (error) {
@@ -688,6 +707,38 @@ function SPPComponent({
         <p className="mt-1 text-sm text-slate-500">
           Pilih bank lalu upload bukti pembayaran.
         </p>
+      </div>
+
+      <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4">
+        <p className="mb-2 text-sm font-medium text-slate-500">
+          Bayar Beberapa Bulan Sekaligus
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {DEFAULT_BILLS.map((month) => (
+            <label
+              key={month.bulan}
+              className="flex items-center gap-3 rounded-xl border px-3 py-2 text-sm"
+            >
+              <input
+                type="checkbox"
+                checked={selectedMonths.includes(month.bulan)}
+                onChange={() => {
+                  setSelectedMonths((current) =>
+                    current.includes(month.bulan)
+                      ? current.filter((item) => item !== month.bulan)
+                      : [...current, month.bulan]
+                  );
+                }}
+              />
+              <span>{month.bulan}</span>
+            </label>
+          ))}
+        </div>
+        {selectedMonths.length > 0 && (
+          <p className="mt-3 text-xs text-slate-500">
+            Bukti akan digunakan untuk bulan: {selectedMonths.join(", ")}.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-5">

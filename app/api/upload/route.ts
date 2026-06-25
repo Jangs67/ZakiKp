@@ -20,7 +20,10 @@ export async function POST(req: Request) {
     const nama = formData.get("nama")?.toString() || "";
     const kelas = formData.get("kelas")?.toString() || "";
     const nisn = formData.get("nisn")?.toString() || "";
-    const bulan = formData.get("bulan")?.toString() || "";
+    const bulanValues = formData
+      .getAll("bulan")
+      .map((value) => value?.toString() || "")
+      .filter(Boolean);
     const status = formData.get("status")?.toString() || "pending";
     const bank = formData.get("bank")?.toString() || "";
     const nominal = formData.get("nominal")?.toString() || "0";
@@ -32,7 +35,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!nama || !kelas || !nisn || !bulan) {
+    if (!nama || !kelas || !nisn || bulanValues.length === 0) {
       return NextResponse.json(
         { message: "Data siswa belum lengkap" },
         { status: 400 }
@@ -53,28 +56,32 @@ export async function POST(req: Request) {
 
     await connectDB();
 
-    const bill = await Bill.findOneAndUpdate(
-      { nisn, bulan },
-      {
-        nama,
-        kelas,
-        nisn,
-        bulan,
-        status,
-        bank,
-        nominal: Number(nominal),
-        proof: imageUrl, // ✅ simpan URL bukan nama file
-      },
-      {
-        upsert: true,
-        new: true,
-      }
+    const bills = await Promise.all(
+      bulanValues.map(async (bulanValue) => {
+        return await Bill.findOneAndUpdate(
+          { nisn, bulan: bulanValue },
+          {
+            nama,
+            kelas,
+            nisn,
+            bulan: bulanValue,
+            status,
+            bank,
+            nominal: Number(nominal),
+            proof: imageUrl,
+          },
+          {
+            upsert: true,
+            new: true,
+          }
+        );
+      })
     );
 
     return NextResponse.json({
       message: "Upload berhasil",
-      bill,
-      proof: imageUrl, // ✅ return URL
+      bills,
+      proof: imageUrl,
     });
 
   } catch (error) {
