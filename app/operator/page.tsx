@@ -22,7 +22,7 @@ type Payment = {
   nominal?: number;
   proof?: string;
   proofName?: string;
-  rejectedReason?: string;
+  reason?: string;
   createdAt?: string;
   bank?: string;
   [key: string]: any;
@@ -930,13 +930,39 @@ export default function OperatorPage() {
         ? {
             ...item,
             status: "unpaid",
-            rejectedReason: trimmedReason,
+            reason: trimmedReason,
           }
         : item
     );
 
     savePayments(nextPayments);
     alert(`Pembayaran ${payment.nama} dikembalikan menjadi belum bayar.`);
+  };
+
+  const handleSetPaymentReason = (payment: Payment) => {
+    const reason = prompt(
+      `Masukkan alasan kepada siswa untuk status pembayaran bulan ${payment.bulan}:`
+    );
+
+    if (reason === null) return;
+
+    const trimmedReason = reason.trim();
+    if (!trimmedReason) {
+      alert("Alasan harus diisi.");
+      return;
+    }
+
+    const nextPayments = payments.map((item) =>
+      item.nisn?.toString() === payment.nisn?.toString() && item.bulan === payment.bulan
+        ? {
+            ...item,
+            reason: trimmedReason,
+          }
+        : item
+    );
+
+    savePayments(nextPayments);
+    alert(`Alasan untuk pembayaran ${payment.nama} berhasil disimpan.`);
   };
 
   const handleVerifySinglePayment = (payment: Payment) => {
@@ -1539,6 +1565,7 @@ export default function OperatorPage() {
                   onViewProof={setProofModal}
                   onVerify={handleVerifySinglePayment}
                   onSetUnpaid={handleSetPaymentUnpaid}
+                  onSetReason={handleSetPaymentReason}
                 />
               ) : (
                 <EmptyState text="Belum ada pembayaran siswa. Upload bukti dari akun siswa terlebih dahulu." />
@@ -1928,12 +1955,14 @@ function PaymentTable({
   onViewProof,
   onVerify,
   onSetUnpaid,
+  onSetReason,
 }: {
   payments: Payment[];
   getNominal: (payment: Payment) => number;
   onViewProof: (payment: Payment) => void;
   onVerify: (payment: Payment) => void;
   onSetUnpaid: (payment: Payment) => void;
+  onSetReason: (payment: Payment) => void;
 }) {
   return (
     <div className="table-wrap">
@@ -1981,17 +2010,25 @@ function PaymentTable({
                     Jadikan Belum
                   </button>
                 ) : (
-                  <button
-                    className="mini-green"
-                    onClick={() => onVerify(payment)}
-                  >
-                    Verifikasi
-                  </button>
+                  <>
+                    <button
+                      className="mini-green"
+                      onClick={() => onVerify(payment)}
+                    >
+                      Verifikasi
+                    </button>
+                    <button
+                      className="mini-gray ml-2"
+                      onClick={() => onSetReason(payment)}
+                    >
+                      Alasan
+                    </button>
+                  </>
                 )}
 
-                {payment.rejectedReason ? (
+                {payment.reason ? (
                   <div className="mt-2 text-xs text-slate-500">
-                    Alasan: {payment.rejectedReason}
+                    Alasan: {payment.reason}
                   </div>
                 ) : null}
               </td>

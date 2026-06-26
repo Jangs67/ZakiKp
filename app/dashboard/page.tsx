@@ -19,7 +19,7 @@ type Bill = {
   status: string;
   file: File | null;
   fileName?: string;
-  rejectedReason?: string;
+  reason?: string;
 };
 
 type ScheduleItem = {
@@ -557,7 +557,7 @@ function SPPComponent({
               ...bill,
               status: "Belum Bayar",
               fileName: "",
-              rejectedReason: "",
+              reason: "",
             };
           }
 
@@ -576,7 +576,7 @@ function SPPComponent({
             ...bill,
             status,
             fileName: payment.proofName || "Bukti pembayaran",
-            rejectedReason: payment.rejectedReason || "",
+            reason: payment.reason || "",
           };
         })
       );
@@ -763,10 +763,10 @@ function SPPComponent({
               <StatusBadge status={bill.status} />
             </div>
 
-            {bill.rejectedReason ? (
+            {bill.reason ? (
               <div className="mb-4 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
-                <p className="font-semibold">Alasan dikembalikan:</p>
-                <p>{bill.rejectedReason}</p>
+                <p className="font-semibold">Alasan:</p>
+                <p>{bill.reason}</p>
               </div>
             ) : null}
 
