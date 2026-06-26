@@ -218,7 +218,6 @@ export default function OperatorPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
   const [proofModal, setProofModal] = useState<Payment | null>(null);
 
@@ -571,106 +570,6 @@ export default function OperatorPage() {
     return a.grade.localeCompare(b.grade);
   });
 
-  const isSelected = (student: Student) =>
-    selectedStudentIds.includes(student.nisn?.toString() || "");
-
-  const toggleSelectStudent = (student: Student) => {
-    const id = student.nisn?.toString() || "";
-    if (!id) return;
-
-    setSelectedStudentIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
-  const toggleSelectAll = (studentList: Student[]) => {
-    const allIds = studentList
-      .map((student) => student.nisn?.toString() || "")
-      .filter(Boolean) as string[];
-
-    const areAllSelected = allIds.every((id) => selectedStudentIds.includes(id));
-
-    setSelectedStudentIds(areAllSelected ? [] : allIds);
-  };
-
-  const clearSelection = () => setSelectedStudentIds([]);
-
-  const handleBulkDelete = () => {
-    if (selectedStudentIds.length === 0) return;
-    const yakin = confirm(`Hapus ${selectedStudentIds.length} siswa terpilih?`);
-    if (!yakin) return;
-
-    const nextStudents = students.filter(
-      (student) => !selectedStudentIds.includes(student.nisn?.toString() || "")
-    );
-
-    saveStudents(nextStudents);
-    clearSelection();
-  };
-
-  const handleBulkVerify = () => {
-    if (selectedStudentIds.length === 0) return;
-
-    const selectedStudents = students.filter((student) =>
-      selectedStudentIds.includes(student.nisn?.toString() || "")
-    );
-
-    let nextPayments = [...payments];
-
-    selectedStudents.forEach((student) => {
-      const studentPayments = getPaymentsByStudent(student);
-      if (studentPayments.length > 0) {
-        nextPayments = nextPayments.map((payment) =>
-          payment.nisn?.toString() === student.nisn?.toString() ||
-          payment.nama?.toLowerCase() === student.nama?.toLowerCase()
-            ? {
-                ...payment,
-                nama: student.nama,
-                kelas: student.kelas,
-                nisn: student.nisn,
-                status: "paid",
-                nominal: payment.nominal || getStudentNominal(student),
-              }
-            : payment
-        );
-      } else {
-        nextPayments.push({
-          nama: student.nama,
-          kelas: student.kelas,
-          nisn: student.nisn,
-          bulan: "Manual",
-          status: "paid",
-          nominal: getStudentNominal(student),
-          createdAt: new Date().toISOString(),
-        });
-      }
-    });
-
-    savePayments(nextPayments);
-    alert(`${selectedStudentIds.length} siswa terpilih berhasil diverifikasi.`);
-    clearSelection();
-  };
-
-  const handleBulkSetUnpaid = () => {
-    if (selectedStudentIds.length === 0) return;
-
-    const nextPayments = payments.map((payment) =>
-      selectedStudentIds.includes(payment.nisn?.toString() || "") ||
-      selectedStudentIds.includes(
-        students.find(
-          (student) =>
-            student.nama?.toLowerCase() === payment.nama?.toLowerCase() &&
-            student.nisn?.toString() === payment.nisn?.toString()
-        )?.nisn?.toString() || ""
-      )
-        ? { ...payment, status: "unpaid" }
-        : payment
-    );
-
-    savePayments(nextPayments);
-    alert(`${selectedStudentIds.length} siswa terpilih dikembalikan ke status belum bayar.`);
-    clearSelection();
-  };
 
   const editingStudent =
     editingIndex !== null ? students[editingIndex] : undefined;
@@ -1012,23 +911,15 @@ export default function OperatorPage() {
     alert(`Pembayaran ${student.nama} berhasil diverifikasi.`);
   };
 
-  const handleSetUnpaid = (student: Student) => {
-    const nextPayments = payments.map((payment) => {
-      if (
-        payment.nisn?.toString() === student.nisn?.toString() ||
-        payment.nama?.toLowerCase() === student.nama?.toLowerCase()
-      ) {
-        return {
-          ...payment,
-          status: "unpaid",
-        };
-      }
-
-      return payment;
-    });
+  const handleSetPaymentUnpaid = (payment: Payment) => {
+    const nextPayments = payments.map((item) =>
+      item.nisn?.toString() === payment.nisn?.toString() && item.bulan === payment.bulan
+        ? { ...item, status: "unpaid" }
+        : item
+    );
 
     savePayments(nextPayments);
-    alert(`Status ${student.nama} dikembalikan menjadi belum bayar.`);
+    alert(`Pembayaran ${payment.nama} dikembalikan menjadi belum bayar.`);
   };
 
   const handleVerifySinglePayment = (payment: Payment) => {
@@ -1590,23 +1481,6 @@ export default function OperatorPage() {
                 <span className="count-badge">{filteredStudents.length} Data</span>
               </div>
 
-              {selectedStudentIds.length > 0 && (
-                <div className="bulk-action-bar">
-                  <span>{selectedStudentIds.length} siswa dipilih</span>
-                  <div className="bulk-buttons">
-                    <button type="button" className="green" onClick={handleBulkVerify}>
-                      Verifikasi Terpilih
-                    </button>
-                    <button type="button" className="orange" onClick={handleBulkSetUnpaid}>
-                      Jadikan Belum Bayar
-                    </button>
-                    <button type="button" className="red" onClick={handleBulkDelete}>
-                      Hapus Terpilih
-                    </button>
-                  </div>
-                </div>
-              )}
-
               {studentGroups.length === 0 ? (
                 <EmptyState text="Data siswa tidak ditemukan." />
               ) : (
@@ -1617,21 +1491,8 @@ export default function OperatorPage() {
                     </div>
                     <StudentTable
                       students={group.students}
-                      getStatus={getStatus}
-                      getPaymentByStudent={getPaymentByStudent}
-                      getNominal={getStudentNominal}
                       onEdit={handleEdit}
                       onDelete={handleDelete}
-                      onVerify={handleVerifyPayment}
-                      onSetUnpaid={handleSetUnpaid}
-                      onViewProof={setProofModal}
-                      selectedIds={selectedStudentIds}
-                      onToggleSelect={toggleSelectStudent}
-                      onToggleSelectAll={() => toggleSelectAll(group.students)}
-                      allSelected={
-                        group.students.length > 0 &&
-                        group.students.every((student) => isSelected(student))
-                      }
                     />
                   </div>
                 ))
@@ -1660,6 +1521,7 @@ export default function OperatorPage() {
                   getNominal={getPaymentNominal}
                   onViewProof={setProofModal}
                   onVerify={handleVerifySinglePayment}
+                  onSetUnpaid={handleSetPaymentUnpaid}
                 />
               ) : (
                 <EmptyState text="Belum ada pembayaran siswa. Upload bukti dari akun siswa terlebih dahulu." />
@@ -1925,186 +1787,47 @@ function StatusBadge({ status }: { status: string }) {
 
 function StudentTable({
   students,
-  getStatus,
-  getPaymentByStudent,
-  getNominal,
   onEdit,
   onDelete,
-  onVerify,
-  onSetUnpaid,
-  onViewProof,
-  selectedIds,
-  onToggleSelect,
-  onToggleSelectAll,
-  allSelected,
-  printMode,
 }: {
   students: Student[];
-  getStatus: (student: Student) => string;
-  getPaymentByStudent: (student: Student) => Payment | undefined;
-  getNominal: (student: Student) => number;
   onEdit: (student: Student) => void;
   onDelete: (student: Student) => void;
-  onVerify: (student: Student) => void;
-  onSetUnpaid: (student: Student) => void;
-  onViewProof: (payment: Payment) => void;
-  selectedIds?: string[];
-  onToggleSelect?: (student: Student) => void;
-  onToggleSelectAll?: () => void;
-  allSelected?: boolean;
-  printMode?: boolean;
 }) {
   if (students.length === 0) {
     return <EmptyState text="Data siswa tidak ditemukan." />;
   }
 
-  // Grid layout untuk printMode (Rekap)
-  if (printMode) {
-    return (
-      <div className="student-grid">
-        {students.map((student, index) => {
-          const status = getStatus(student);
-          const payment = getPaymentByStudent(student);
-
-          return (
-            <div key={index} className="student-card">
-              <div className="card-header">
-                <div className="student-info">
-                  <div className="name-full" title={student.nama}>
-                    {student.nama}
-                  </div>
-                  <div className="meta-info">
-                    {student.nisn && <span className="nisn-label">{student.nisn}</span>}
-                    {getNominal(student) > 0 && (
-                      <span className="nominal-label">{formatRupiah(getNominal(student))}</span>
-                    )}
-                  </div>
-                </div>
-                <div className="status-badge-inline">
-                  <StatusBadge status={status} />
-                </div>
-              </div>
-
-              <div className="card-body">
-                <div className="kelas-info">
-                  <span className="label">Kelas</span>
-                  <span className="value">{student.kelas}</span>
-                </div>
-                {payment?.proof && (
-                  <button
-                    type="button"
-                    onClick={() => onViewProof(payment)}
-                    className="blue-btn card-btn"
-                  >
-                    Lihat Bukti
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  // Table layout untuk non-print mode
   return (
     <div className="table-wrap">
       <table>
         <thead>
           <tr>
-            {onToggleSelectAll ? (
-              <th>
-                <input
-                  type="checkbox"
-                  checked={Boolean(allSelected)}
-                  onChange={onToggleSelectAll}
-                />
-              </th>
-            ) : null}
             <th>Nama</th>
             <th>Kelas</th>
-            <th>Status</th>
-            <th>Bukti</th>
-            {!printMode && <th>Aksi</th>}
+            <th>Aksi</th>
           </tr>
         </thead>
-
         <tbody>
-          {students.map((student, index) => {
-            const status = getStatus(student);
-            const payment = getPaymentByStudent(student);
-
-            return (
-              <tr key={index}>
-                {onToggleSelect ? (
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds?.includes(student.nisn?.toString() || "")}
-                      onChange={() => onToggleSelect(student)}
-                    />
-                  </td>
-                ) : null}
-                <td className="student-name" title={student.nama}>
-                  <div className="name-main">{student.nama}</div>
-                  <div className="student-meta">{student.nisn || "-"} • {formatRupiah(getNominal(student))}</div>
-                </td>
-                <td className="kelas-cell">{student.kelas}</td>
-                <td className="status-cell">
-                  <StatusBadge status={status} />
-                </td>
-                <td>
-                  {payment?.proof ? (
-                    <button
-                      type="button"
-                      onClick={() => onViewProof(payment)}
-                      className="blue-btn"
-                    >
-                      Lihat Bukti
-                    </button>
-                  ) : (
-                    <span className="muted">Belum ada</span>
-                  )}
-                </td>
-
-                {!printMode && (
-                  <td>
-                    <div className="row-actions">
-                      <button type="button" onClick={() => onEdit(student)}>
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="red"
-                        onClick={() => onDelete(student)}
-                      >
-                        Hapus
-                      </button>
-
-                      {status === "paid" ? (
-                        <button
-                          type="button"
-                          className="orange"
-                          onClick={() => onSetUnpaid(student)}
-                        >
-                          Jadikan Belum
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="green"
-                          onClick={() => onVerify(student)}
-                        >
-                          Verifikasi
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                )}
-              </tr>
-            );
-          })}
+          {students.map((student, index) => (
+            <tr key={index}>
+              <td className="student-name" title={student.nama}>
+                <div className="name-main">{student.nama}</div>
+                <div className="student-meta">{student.nisn || "-"}</div>
+              </td>
+              <td className="kelas-cell">{student.kelas}</td>
+              <td>
+                <div className="row-actions">
+                  <button type="button" onClick={() => onEdit(student)}>
+                    Edit
+                  </button>
+                  <button type="button" className="red" onClick={() => onDelete(student)}>
+                    Hapus
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
@@ -2187,11 +1910,13 @@ function PaymentTable({
   getNominal,
   onViewProof,
   onVerify,
+  onSetUnpaid,
 }: {
   payments: Payment[];
   getNominal: (payment: Payment) => number;
   onViewProof: (payment: Payment) => void;
   onVerify: (payment: Payment) => void;
+  onSetUnpaid: (payment: Payment) => void;
 }) {
   return (
     <div className="table-wrap">
@@ -2231,15 +1956,20 @@ function PaymentTable({
                 )}
               </td>
               <td>
-                {normalizeStatus(payment.status) !== "paid" ? (
+                {normalizeStatus(payment.status) === "paid" ? (
+                  <button
+                    className="mini-orange"
+                    onClick={() => onSetUnpaid(payment)}
+                  >
+                    Jadikan Belum
+                  </button>
+                ) : (
                   <button
                     className="mini-green"
                     onClick={() => onVerify(payment)}
                   >
                     Verifikasi
                   </button>
-                ) : (
-                  <span className="done-text">Selesai</span>
                 )}
               </td>
             </tr>
