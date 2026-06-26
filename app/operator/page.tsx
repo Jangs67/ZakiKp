@@ -22,6 +22,7 @@ type Payment = {
   nominal?: number;
   proof?: string;
   proofName?: string;
+  rejectedReason?: string;
   createdAt?: string;
   bank?: string;
   [key: string]: any;
@@ -912,9 +913,25 @@ export default function OperatorPage() {
   };
 
   const handleSetPaymentUnpaid = (payment: Payment) => {
+    const reason = prompt(
+      `Masukkan alasan kepada siswa kenapa bukti pembayaran bulan ${payment.bulan} dikembalikan:`
+    );
+
+    if (reason === null) return;
+
+    const trimmedReason = reason.trim();
+    if (!trimmedReason) {
+      alert("Alasan harus diisi.");
+      return;
+    }
+
     const nextPayments = payments.map((item) =>
       item.nisn?.toString() === payment.nisn?.toString() && item.bulan === payment.bulan
-        ? { ...item, status: "unpaid" }
+        ? {
+            ...item,
+            status: "unpaid",
+            rejectedReason: trimmedReason,
+          }
         : item
     );
 
@@ -1971,6 +1988,12 @@ function PaymentTable({
                     Verifikasi
                   </button>
                 )}
+
+                {payment.rejectedReason ? (
+                  <div className="mt-2 text-xs text-slate-500">
+                    Alasan: {payment.rejectedReason}
+                  </div>
+                ) : null}
               </td>
             </tr>
           ))}
