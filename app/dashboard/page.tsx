@@ -604,12 +604,17 @@ function SPPComponent({
   };
 
   const handleUpload = async (index: number, e: any) => {
-    const file = e.target.files?.[0];
+    const fileInput = e.target as HTMLInputElement;
+    const file = fileInput.files?.[0];
 
-    if (!file) return;
+    if (!file) {
+      fileInput.value = "";
+      return;
+    }
 
     if (!user || user.role === "operator" || user.username === "admin") {
       alert("Akun operator tidak bisa upload bukti pembayaran siswa.");
+      fileInput.value = "";
       return;
     }
 
@@ -635,6 +640,7 @@ function SPPComponent({
       if (!response.ok) {
         const error = await response.json().catch(() => null);
         alert(error?.message || "Gagal upload bukti pembayaran.");
+        fileInput.value = "";
         return;
       }
 
@@ -693,11 +699,13 @@ function SPPComponent({
 
       setBulkProofName(file.name);
       setSelectedMonths([]);
+      fileInput.value = "";
 
       alert("Bukti pembayaran berhasil diupload. Menunggu verifikasi operator.");
     } catch (error) {
       console.error("Upload error:", error);
       alert("Gagal membaca file bukti pembayaran.");
+      fileInput.value = "";
     }
   };
 
