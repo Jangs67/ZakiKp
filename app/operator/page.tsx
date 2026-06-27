@@ -401,7 +401,7 @@ export default function OperatorPage() {
         };
       });
 
-      const fixedArchivedPayments = validArchived.map((payment) => {
+        const fixedArchivedPayments = validArchived.map((payment) => {
         const matchedStudent = students.find(
           (student) =>
             student.nisn?.toString() === payment.nisn?.toString() ||
@@ -420,13 +420,19 @@ export default function OperatorPage() {
         };
       });
 
-      localStorage.setItem(DEMO_PAYMENTS_KEY, JSON.stringify(fixedPayments));
+      const orphanPayments = fixedPayments.filter(
+        (payment) => !hasStudentForPayment(payment)
+      );
+      const activePayments = fixedPayments.filter(hasStudentForPayment);
+      const finalArchivedPayments = [...fixedArchivedPayments, ...orphanPayments];
+
+      localStorage.setItem(DEMO_PAYMENTS_KEY, JSON.stringify(activePayments));
       localStorage.setItem(
         ARCHIVED_PAYMENTS_KEY,
-        JSON.stringify(fixedArchivedPayments)
+        JSON.stringify(finalArchivedPayments)
       );
-      setPayments(fixedPayments);
-      setArchivedPayments(fixedArchivedPayments);
+      setPayments(activePayments);
+      setArchivedPayments(finalArchivedPayments);
       setLoadingPayments(false);
     };
 
@@ -448,13 +454,24 @@ export default function OperatorPage() {
     localStorage.setItem(STORAGE_STUDENTS, JSON.stringify(nextStudents));
   };
 
+  const hasStudentForPayment = (payment: Payment) => {
+    return students.some((student) => matchStudentPayment(payment, student));
+  };
+
   const savePayments = (nextPayments: Payment[]) => {
     const cleanPayments = nextPayments.filter((payment) =>
       isValidPayment(payment)
     );
 
-    setPayments(cleanPayments);
-    localStorage.setItem(DEMO_PAYMENTS_KEY, JSON.stringify(cleanPayments));
+    const activePayments = cleanPayments.filter(hasStudentForPayment);
+    const orphanPayments = cleanPayments.filter((payment) => !hasStudentForPayment(payment));
+
+    if (orphanPayments.length > 0) {
+      saveArchivedPayments([...archivedPayments, ...orphanPayments]);
+    }
+
+    setPayments(activePayments);
+    localStorage.setItem(DEMO_PAYMENTS_KEY, JSON.stringify(activePayments));
   };
 
   const saveArchivedPayments = (nextPayments: Payment[]) => {
@@ -720,6 +737,30 @@ export default function OperatorPage() {
     saveArchivedPayments(nextArchivedPayments);
 
     alert(`Siswa ${student.nama} berhasil dihapus.`);
+  };
+
+  const handleEditPaymentNominal = (payment: Payment) => {
+    const nominalInput = prompt(
+      `Masukkan nominal koreksi untuk ${payment.nama} (bulan ${payment.bulan}):`,
+      String(payment.nominal || getPaymentNominal(payment))
+    );
+
+    if (nominalInput === null) return;
+
+    const parsed = Number(nominalInput.replace(/[^0-9]/g, ""));
+    if (!parsed || parsed < 0) {
+      alert("Nominal tidak valid.");
+      return;
+    }
+
+    const nextPayments = payments.map((item) =>
+      item.nisn?.toString() === payment.nisn?.toString() && item.bulan === payment.bulan
+        ? { ...item, nominal: parsed }
+        : item
+    );
+
+    savePayments(nextPayments);
+    alert(`Nominal pembayaran ${payment.nama} diperbarui menjadi ${formatRupiah(parsed)}.`);
   };
 
   const handleSaveStudent = async (e: any) => {
@@ -1646,6 +1687,7 @@ export default function OperatorPage() {
                   onVerify={handleVerifySinglePayment}
                   onSetUnpaid={handleSetPaymentUnpaid}
                   onSetReason={handleSetPaymentReason}
+                  onEditNominal={handleEditPaymentNominal}
                 />
               ) : (
                 <EmptyState text="Belum ada pembayaran siswa. Upload bukti dari akun siswa terlebih dahulu." />
@@ -1670,13 +1712,6 @@ export default function OperatorPage() {
                 <RekapBox
                   title="Total Tagihan"
                   value={formatRupiah(stats.totalTagihan)}
-                />
-                <RekapBox
-                  title={`UKT ${selectedClass}`}
-                  value={formatRupiah(
-                    classPrices[selectedClass] ||
-                      DEFAULT_CLASS_PRICES[selectedClass]
-                  )}
                 />
                 <RekapBox title="Sudah Bayar" value={String(stats.paid)} />
                 <RekapBox title="Belum Bayar" value={String(stats.unpaid)} />
@@ -2068,6 +2103,7 @@ function PaymentTable({
   onVerify,
   onSetUnpaid,
   onSetReason,
+  onEditNominal,
 }: {
   payments: Payment[];
   getNominal: (payment: Payment) => number;
@@ -2075,6 +2111,7 @@ function PaymentTable({
   onVerify: (payment: Payment) => void;
   onSetUnpaid: (payment: Payment) => void;
   onSetReason: (payment: Payment) => void;
+  onEditNominal: (payment: Payment) => void;
 }) {
   return (
     <div className="table-wrap">
@@ -2137,6 +2174,12 @@ function PaymentTable({
                     </button>
                   </>
                 )}
+                <button
+                  className="mini-blue ml-2"
+                  onClick={() => onEditNominal(payment)}
+                >
+                  Koreksi Nominal
+                </button>
 
                 {payment.reason ? (
                   <div className="mt-2 text-xs text-slate-500">
