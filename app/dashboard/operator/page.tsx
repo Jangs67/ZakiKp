@@ -740,9 +740,8 @@ export default function OperatorPage() {
                 </p>
               </div>
 
-              <div className="mb-6 grid grid-cols-4 gap-4">
+              <div className="mb-6 grid grid-cols-3 gap-4">
                 <RekapBox title="Total Tagihan" value={formatRupiah(totalTagihan)} />
-                <RekapBox title="Harga SPP" value={formatRupiah(sppPrice)} />
                 <RekapBox title="Sudah Bayar" value={String(paidCount)} />
                 <RekapBox title="Belum Bayar" value={String(unpaidCount)} />
               </div>

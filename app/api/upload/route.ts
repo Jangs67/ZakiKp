@@ -16,7 +16,9 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
 
-    const file = formData.get("file") as File | null;
+    const files = formData
+      .getAll("file")
+      .filter((value) => value instanceof File) as File[];
     const nama = formData.get("nama")?.toString() || "";
     const kelas = formData.get("kelas")?.toString() || "";
     const nisn = formData.get("nisn")?.toString() || "";
@@ -28,7 +30,7 @@ export async function POST(req: Request) {
     const bank = formData.get("bank")?.toString() || "";
     const nominal = formData.get("nominal")?.toString() || "0";
 
-    if (!file) {
+    if (!files || files.length === 0) {
       return NextResponse.json(
         { message: "File bukti pembayaran tidak ditemukan" },
         { status: 400 }
@@ -42,17 +44,28 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Convert file ke base64 dan upload ke Cloudinary
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
+    const uploadedUrls = await Promise.all(
+      files.map(async (file) => {
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-    const uploadResult = await cloudinary.uploader.upload(base64, {
-      folder: "bukti-pembayaran",
-      resource_type: "image",
-    });
+        const uploadResult = await cloudinary.uploader.upload(base64, {
+          folder: "bukti-pembayaran",
+          resource_type: "image",
+        });
 
-    const imageUrl = uploadResult.secure_url; // URL permanen dari Cloudinary
+        return uploadResult.secure_url;
+      })
+    );
+
+    const proofUrls = uploadedUrls.filter(Boolean);
+    if (proofUrls.length === 0) {
+      return NextResponse.json(
+        { message: "Gagal upload bukti pembayaran." },
+        { status: 500 }
+      );
+    }
 
     await connectDB();
 
@@ -61,18 +74,24 @@ export async function POST(req: Request) {
         return await Bill.findOneAndUpdate(
           { nisn, bulan: bulanValue },
           {
-            nama,
-            kelas,
-            nisn,
-            bulan: bulanValue,
-            status,
-            bank,
-            nominal: Number(nominal),
-            proof: imageUrl,
+            $set: {
+              nama,
+              kelas,
+              nisn,
+              bulan: bulanValue,
+              status,
+              bank,
+              nominal: Number(nominal),
+              proof: proofUrls[proofUrls.length - 1],
+            },
+            $push: {
+              proofs: { $each: proofUrls },
+            },
           },
           {
             upsert: true,
             new: true,
+            setDefaultsOnInsert: true,
           }
         );
       })
@@ -81,7 +100,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       message: "Upload berhasil",
       bills,
-      proof: imageUrl,
+      proofs: proofUrls,
     });
 
   } catch (error) {

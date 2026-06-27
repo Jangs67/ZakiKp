@@ -19,6 +19,9 @@ type Bill = {
   status: string;
   file: File | null;
   fileName?: string;
+  proof?: string;
+  proofs?: string[];
+  proofNames?: string[];
   reason?: string;
 };
 
@@ -605,9 +608,9 @@ function SPPComponent({
 
   const handleUpload = async (index: number, e: any) => {
     const fileInput = e.target as HTMLInputElement;
-    const file = fileInput.files?.[0];
+    const files = Array.from(fileInput.files || []).filter(Boolean) as File[];
 
-    if (!file) {
+    if (files.length === 0) {
       fileInput.value = "";
       return;
     }
@@ -622,7 +625,7 @@ function SPPComponent({
     const selectedMonthsToUpload = selectedMonths.length > 0 ? selectedMonths : [bills[index].bulan];
 
     const formData = new FormData();
-    formData.append("file", file);
+    files.forEach((file) => formData.append("file", file));
     formData.append("nama", user.nama || "");
     formData.append("kelas", user.kelas || "");
     formData.append("nisn", user.nisn || "");
@@ -648,6 +651,13 @@ function SPPComponent({
       const uploadedMonths: string[] = Array.isArray(result.bills)
         ? result.bills.map((bill: any) => bill.bulan)
         : [bills[index].bulan];
+      const uploadedProofs: string[] = Array.isArray(result.proofs)
+        ? result.proofs
+        : result.proof
+        ? [result.proof]
+        : [];
+      const fileNames = files.map((file) => file.name);
+      const proofFileName = fileNames.join(", ");
 
       const savedPayments = localStorage.getItem(DEMO_PAYMENTS_KEY);
       const payments = safeJsonParse<any[]>(savedPayments, []);
@@ -655,6 +665,22 @@ function SPPComponent({
       const nextPayments = [...payments];
 
       for (const month of uploadedMonths) {
+        const existingIndex = nextPayments.findIndex(
+          (payment: any) =>
+            payment.nisn?.toString() === user.nisn?.toString() &&
+            payment.bulan === month
+        );
+
+        const existingPayment = existingIndex >= 0 ? nextPayments[existingIndex] : null;
+        const mergedProofs = [
+          ...(existingPayment?.proofs || existingPayment?.proof ? [existingPayment.proof].filter(Boolean) : []),
+          ...uploadedProofs,
+        ];
+        const mergedProofNames = [
+          ...(existingPayment?.proofNames || []),
+          ...fileNames,
+        ];
+
         const paymentData = {
           nama: user.nama || "",
           kelas: user.kelas || "",
@@ -663,16 +689,12 @@ function SPPComponent({
           status: "pending",
           nominal: sppPrice,
           bank: selectedBank,
-          proof: result.proof,
-          proofName: file.name,
+          proof: uploadedProofs[uploadedProofs.length - 1] || existingPayment?.proof || "",
+          proofs: mergedProofs,
+          proofNames: mergedProofNames,
+          fileName: proofFileName,
           createdAt: new Date().toISOString(),
         };
-
-        const existingIndex = nextPayments.findIndex(
-          (payment: any) =>
-            payment.nisn?.toString() === user.nisn?.toString() &&
-            payment.bulan === month
-        );
 
         if (existingIndex >= 0) {
           nextPayments[existingIndex] = paymentData;
@@ -686,18 +708,26 @@ function SPPComponent({
       setBills((currentBills) =>
         currentBills.map((bill) => {
           if (uploadedMonths.includes(bill.bulan)) {
+            const existingPayment = payments.find(
+              (payment: any) =>
+                payment.nisn?.toString() === user.nisn?.toString() &&
+                payment.bulan === bill.bulan
+            );
+            const existingProofs = existingPayment?.proofs || (existingPayment?.proof ? [existingPayment.proof] : []);
+            const existingProofNames = existingPayment?.proofNames || [];
+
             return {
               ...bill,
               status: "Menunggu Verifikasi",
-              file: file,
-              fileName: file.name,
+              fileName: proofFileName,
+              proofs: [...existingProofs, ...uploadedProofs],
+              proofNames: [...existingProofNames, ...fileNames],
             };
           }
           return bill;
         })
       );
 
-      setBulkProofName(file.name);
       setSelectedMonths([]);
       fileInput.value = "";
 
@@ -824,13 +854,16 @@ function SPPComponent({
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={(e) => handleUpload(i, e)}
                 className="hidden"
               />
 
-              {(bill.file || bill.fileName) && (
+              {(bill.file || bill.fileName || bill.proofNames?.length) && (
                 <p className="mt-3 max-w-full truncate rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
-                  {bill.file?.name || bill.fileName}
+                  {bill.proofNames?.length
+                    ? bill.proofNames.join(", ")
+                    : bill.file?.name || bill.fileName}
                 </p>
               )}
             </label>

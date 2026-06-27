@@ -21,7 +21,9 @@ type Payment = {
   status?: string;
   nominal?: number;
   proof?: string;
+  proofs?: string[];
   proofName?: string;
+  proofNames?: string[];
   reason?: string;
   createdAt?: string;
   bank?: string;
@@ -395,6 +397,12 @@ export default function OperatorPage() {
           kelas: payment.kelas || matchedStudent?.kelas || "",
           nisn: payment.nisn || matchedStudent?.nisn || "",
           status: payment.status || "pending",
+          proofs:
+            payment.proofs && payment.proofs.length > 0
+              ? payment.proofs
+              : payment.proof
+              ? [payment.proof]
+              : [],
           nominal:
             payment.nominal ||
             getUktPriceByClass(classPrices, payment.kelas || matchedStudent?.kelas),
@@ -527,7 +535,11 @@ export default function OperatorPage() {
 
   const getPaymentByStudent = (student: Student) => {
     const list = getPaymentsByStudent(student);
-    return list.find((payment) => payment.proof) || list[0];
+    return (
+      list.find(
+        (payment) => payment.proof || (payment.proofs && payment.proofs.length > 0)
+      ) || list[0]
+    );
   };
 
   const getStatus = (student: Student) => {
@@ -1777,7 +1789,18 @@ export default function OperatorPage() {
               </button>
             </div>
 
-            {proofModal.proof ? (
+            {proofModal.proofs?.length ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {proofModal.proofs.map((src, index) => (
+                  <img
+                    key={index}
+                    src={getProofSrc(src)}
+                    alt={`Bukti Pembayaran ${index + 1}`}
+                    className="proof-image"
+                  />
+                ))}
+              </div>
+            ) : proofModal.proof ? (
               <img
                 src={getProofSrc(proofModal.proof)}
                 alt="Bukti Pembayaran"
@@ -2077,7 +2100,7 @@ function RekapStudentCards({
             </div>
 
             <div className="rekap-card-footer">
-              {payment?.proof ? (
+              {payment?.proof || (payment?.proofs && payment.proofs.length > 0) ? (
                 <button
                   type="button"
                   className="blue-btn card-btn"
@@ -2139,7 +2162,7 @@ function PaymentTable({
                 <StatusBadge status={payment.status || "pending"} />
               </td>
               <td>
-                {payment.proof ? (
+                {payment.proof || (payment.proofs && payment.proofs.length > 0) ? (
                   <button
                     onClick={() => onViewProof(payment)}
                     className="blue-btn"

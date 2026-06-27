@@ -30,6 +30,10 @@ const BillSchema = new Schema(
       type: Number,
       default: 0,
     },
+    proofs: {
+      type: [String],
+      default: [],
+    },
     proof: {
       type: String,
       default: "",
