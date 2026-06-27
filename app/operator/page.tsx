@@ -58,7 +58,7 @@ const STORAGE_SPP_PRICE = "operator_spp_price";
 const STORAGE_BANKS = "operator_banks";
 const STORAGE_SCHOOL_PROFILE = "operator_school_profile";
 const DEMO_PAYMENTS_KEY = "demo_payments";
-const OLD_BILLS_KEY = "operator_bills";
+const ARCHIVED_PAYMENTS_KEY = "operator_archived_payments";
 
 const CLASS_OPTIONS = [
   "Kelas 1",
@@ -178,6 +178,7 @@ export default function OperatorPage() {
 
   const [students, setStudents] = useState<Student[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [archivedPayments, setArchivedPayments] = useState<Payment[]>([]);
   const [loadingPayments, setLoadingPayments] = useState(true);
 
   const [classPrices, setClassPrices] =
@@ -344,7 +345,6 @@ export default function OperatorPage() {
       );
     }
 
-    localStorage.removeItem(OLD_BILLS_KEY);
     setAuthorized(true);
 
     void fetchStudents();
@@ -371,8 +371,15 @@ export default function OperatorPage() {
       const savedPayments = localStorage.getItem(DEMO_PAYMENTS_KEY);
       const rawPayments = safeJsonParse<Payment[]>(savedPayments, []);
 
+      const savedArchived = localStorage.getItem(ARCHIVED_PAYMENTS_KEY);
+      const rawArchived = safeJsonParse<Payment[]>(savedArchived, []);
+
       const validPayments = Array.isArray(rawPayments)
         ? rawPayments.filter((payment) => isValidPayment(payment))
+        : [];
+
+      const validArchived = Array.isArray(rawArchived)
+        ? rawArchived.filter((payment) => isValidPayment(payment))
         : [];
 
       const fixedPayments = validPayments.map((payment) => {
@@ -394,8 +401,32 @@ export default function OperatorPage() {
         };
       });
 
+      const fixedArchivedPayments = validArchived.map((payment) => {
+        const matchedStudent = students.find(
+          (student) =>
+            student.nisn?.toString() === payment.nisn?.toString() ||
+            student.nama?.toLowerCase() === payment.nama?.toLowerCase()
+        );
+
+        return {
+          ...payment,
+          nama: payment.nama || matchedStudent?.nama || "",
+          kelas: payment.kelas || matchedStudent?.kelas || "",
+          nisn: payment.nisn || matchedStudent?.nisn || "",
+          status: payment.status || "pending",
+          nominal:
+            payment.nominal ||
+            getUktPriceByClass(classPrices, payment.kelas || matchedStudent?.kelas),
+        };
+      });
+
       localStorage.setItem(DEMO_PAYMENTS_KEY, JSON.stringify(fixedPayments));
+      localStorage.setItem(
+        ARCHIVED_PAYMENTS_KEY,
+        JSON.stringify(fixedArchivedPayments)
+      );
       setPayments(fixedPayments);
+      setArchivedPayments(fixedArchivedPayments);
       setLoadingPayments(false);
     };
 
@@ -426,6 +457,15 @@ export default function OperatorPage() {
     localStorage.setItem(DEMO_PAYMENTS_KEY, JSON.stringify(cleanPayments));
   };
 
+  const saveArchivedPayments = (nextPayments: Payment[]) => {
+    const cleanPayments = nextPayments.filter((payment) =>
+      isValidPayment(payment)
+    );
+
+    setArchivedPayments(cleanPayments);
+    localStorage.setItem(ARCHIVED_PAYMENTS_KEY, JSON.stringify(cleanPayments));
+  };
+
   const saveClassPrices = (nextPrices: ClassPrices) => {
     setClassPrices(nextPrices);
     localStorage.setItem(STORAGE_CLASS_PRICES, JSON.stringify(nextPrices));
@@ -447,20 +487,25 @@ export default function OperatorPage() {
   };
 
   const cleanBrokenPayments = () => {
-    localStorage.removeItem(OLD_BILLS_KEY);
-
     const cleanPayments = payments.filter((payment) => isValidPayment(payment));
+    const cleanArchived = archivedPayments.filter((payment) =>
+      isValidPayment(payment)
+    );
 
     savePayments(cleanPayments);
+    saveArchivedPayments(cleanArchived);
     alert("Data pembayaran rusak berhasil dibersihkan.");
   };
 
-  const getPaymentsByStudent = (student: Student) => {
-    return payments.filter(
-      (payment) =>
-        payment.nisn?.toString() === student.nisn?.toString() ||
-        payment.nama?.toLowerCase() === student.nama?.toLowerCase()
+  const matchStudentPayment = (payment: Payment, student: Student) => {
+    return (
+      payment.nisn?.toString() === student.nisn?.toString() ||
+      payment.nama?.toLowerCase() === student.nama?.toLowerCase()
     );
+  };
+
+  const getPaymentsByStudent = (student: Student) => {
+    return payments.filter((payment) => matchStudentPayment(payment, student));
   };
 
   const getPaymentByStudent = (student: Student) => {
@@ -523,6 +568,31 @@ export default function OperatorPage() {
       totalBelumBayar,
     };
   }, [students, payments, classPrices]);
+
+  const archivedStats = useMemo(() => {
+    const paid = archivedPayments.filter(
+      (payment) => normalizeStatus(payment.status) === "paid"
+    ).length;
+    const pending = archivedPayments.filter(
+      (payment) => normalizeStatus(payment.status) === "pending"
+    ).length;
+    const unpaid = archivedPayments.filter(
+      (payment) => normalizeStatus(payment.status) === "unpaid"
+    ).length;
+
+    const totalNominal = archivedPayments.reduce(
+      (sum, payment) => sum + getPaymentNominal(payment),
+      0
+    );
+
+    return {
+      count: archivedPayments.length,
+      paid,
+      pending,
+      unpaid,
+      totalNominal,
+    };
+  }, [archivedPayments, classPrices]);
 
   const filteredStudents = students.filter((student) => {
     const keyword = search.toLowerCase();
@@ -637,7 +707,17 @@ export default function OperatorPage() {
         : s.nisn?.toString() !== student.nisn?.toString()
     );
 
+    const paymentsToArchive = payments.filter((payment) =>
+      matchStudentPayment(payment, student)
+    );
+    const nextPayments = payments.filter(
+      (payment) => !matchStudentPayment(payment, student)
+    );
+    const nextArchivedPayments = [...archivedPayments, ...paymentsToArchive];
+
     saveStudents(nextStudents);
+    savePayments(nextPayments);
+    saveArchivedPayments(nextArchivedPayments);
 
     alert(`Siswa ${student.nama} berhasil dihapus.`);
   };
@@ -1609,6 +1689,38 @@ export default function OperatorPage() {
                 getNominal={getStudentNominal}
                 onViewProof={setProofModal}
               />
+
+              {archivedPayments.length > 0 && (
+                <section className="panel-card">
+                  <div className="section-head">
+                    <div>
+                      <h2>Rekap Pembayaran Siswa Terhapus</h2>
+                      <p>
+                        Riwayat pembayaran siswa yang sudah dihapus tetap tersimpan sebagai arsip.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rekap-grid">
+                    <RekapBox
+                      title="Total Arsip Pembayaran"
+                      value={String(archivedStats.count)}
+                    />
+                    <RekapBox
+                      title="Total Nominal Arsip"
+                      value={formatRupiah(archivedStats.totalNominal)}
+                    />
+                    <RekapBox
+                      title="Sudah Bayar (Arsip)"
+                      value={String(archivedStats.paid)}
+                    />
+                    <RekapBox
+                      title="Belum Bayar (Arsip)"
+                      value={String(archivedStats.unpaid)}
+                    />
+                  </div>
+                </section>
+              )}
             </section>
           )}
         </section>
