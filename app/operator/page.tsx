@@ -751,30 +751,6 @@ export default function OperatorPage() {
     alert(`Siswa ${student.nama} berhasil dihapus.`);
   };
 
-  const handleEditPaymentNominal = (payment: Payment) => {
-    const nominalInput = prompt(
-      `Masukkan nominal koreksi untuk ${payment.nama} (bulan ${payment.bulan}):`,
-      String(payment.nominal || getPaymentNominal(payment))
-    );
-
-    if (nominalInput === null) return;
-
-    const parsed = Number(nominalInput.replace(/[^0-9]/g, ""));
-    if (!parsed || parsed < 0) {
-      alert("Nominal tidak valid.");
-      return;
-    }
-
-    const nextPayments = payments.map((item) =>
-      item.nisn?.toString() === payment.nisn?.toString() && item.bulan === payment.bulan
-        ? { ...item, nominal: parsed }
-        : item
-    );
-
-    savePayments(nextPayments);
-    alert(`Nominal pembayaran ${payment.nama} diperbarui menjadi ${formatRupiah(parsed)}.`);
-  };
-
   const handleSaveStudent = async (e: any) => {
     e.preventDefault();
 
@@ -1229,7 +1205,7 @@ export default function OperatorPage() {
 
           <section className="money-grid">
             <MoneyCard
-              title={`SPP ${selectedClass}`}
+              title="Harga SPP"
               value={formatRupiah(
                 classPrices[selectedClass] || DEFAULT_CLASS_PRICES[selectedClass]
               )}
@@ -1699,7 +1675,6 @@ export default function OperatorPage() {
                   onVerify={handleVerifySinglePayment}
                   onSetUnpaid={handleSetPaymentUnpaid}
                   onSetReason={handleSetPaymentReason}
-                  onEditNominal={handleEditPaymentNominal}
                 />
               ) : (
                 <EmptyState text="Belum ada pembayaran siswa. Upload bukti dari akun siswa terlebih dahulu." />
@@ -2195,7 +2170,6 @@ function PaymentTable({
   onVerify,
   onSetUnpaid,
   onSetReason,
-  onEditNominal,
 }: {
   payments: Payment[];
   getNominal: (payment: Payment) => number;
@@ -2203,7 +2177,6 @@ function PaymentTable({
   onVerify: (payment: Payment) => void;
   onSetUnpaid: (payment: Payment) => void;
   onSetReason: (payment: Payment) => void;
-  onEditNominal: (payment: Payment) => void;
 }) {
   return (
     <div className="table-wrap">
@@ -2266,12 +2239,6 @@ function PaymentTable({
                     </button>
                   </>
                 )}
-                <button
-                  className="mini-blue ml-2"
-                  onClick={() => onEditNominal(payment)}
-                >
-                  Koreksi Nominal
-                </button>
 
                 {payment.reason ? (
                   <div className="mt-2 text-xs text-slate-500">
