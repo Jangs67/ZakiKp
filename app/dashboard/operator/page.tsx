@@ -1137,7 +1137,7 @@ function RekapStudentCards({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 overflow-y-auto rounded-2xl border border-slate-100 p-2 md:grid-cols-2 xl:grid-cols-3">
+    <div className="space-y-4 overflow-y-auto rounded-2xl border border-slate-100 p-2">
       {students.map((student, index) => {
         const status = getStatus(student);
         const payment = getPaymentByStudent(student);
@@ -1145,25 +1145,25 @@ function RekapStudentCards({
         return (
           <div
             key={index}
-            className="flex h-full flex-col justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition"
+            className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
           >
-            <div>
-              <p className="text-sm font-black text-slate-900 truncate">{student.nama}</p>
-              <p className="text-xs text-slate-500">NISN: {student.nisn}</p>
+            <div className="flex-1">
+              <p className="text-lg font-black text-slate-900 truncate">{student.nama}</p>
+              <p className="mt-1 text-xs text-slate-500">NISN: {student.nisn}</p>
 
-              <div className="mt-5 space-y-3 rounded-2xl bg-slate-50 p-4">
-                <div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl bg-slate-50 p-4">
                   <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Kelas</p>
-                  <p className="text-sm font-black text-slate-900">{student.kelas}</p>
+                  <p className="mt-2 text-sm font-black text-slate-900">{student.kelas}</p>
                 </div>
-                <div>
+                <div className="rounded-2xl bg-slate-50 p-4">
                   <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Nominal</p>
-                  <p className="text-sm font-black text-slate-900">{formatRupiah(getNominal(student))}</p>
+                  <p className="mt-2 text-sm font-black text-slate-900">{formatRupiah(getNominal(student))}</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="mt-4 flex flex-col items-start gap-3 sm:mt-0 sm:items-end">
               <StatusBadge status={status} />
               {payment?.proof ? (
                 <button
@@ -1174,7 +1174,7 @@ function RekapStudentCards({
                 </button>
               ) : (
                 <span className="text-xs font-bold text-slate-400">
-                  Belum ada
+                  Belum ada bukti
                 </span>
               )}
             </div>
