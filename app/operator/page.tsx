@@ -3167,8 +3167,8 @@ const operatorStyles = `
 }
 
 .rekap-card-grid {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 16px;
   max-height: 600px;
   overflow-y: auto;
@@ -3185,10 +3185,10 @@ const operatorStyles = `
   padding: 18px 20px;
   box-shadow: 0 8px 16px rgba(15, 23, 42, 0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
-  gap: 20px;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
+  gap: 20px;
 }
 
 .rekap-card:hover {
@@ -3198,8 +3198,11 @@ const operatorStyles = `
 
 .rekap-card-header {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
 }
 
 .rekap-card-name {
@@ -3212,15 +3215,15 @@ const operatorStyles = `
 }
 
 .rekap-card-subtitle {
-  margin-top: 0;
+  margin-top: 4px;
   font-size: 12px;
   color: #94a3b8;
 }
 
 .rekap-card-body {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  display: flex;
+  gap: 20px;
+  flex: 1.5;
 }
 
 .rekap-card-field {
@@ -3229,7 +3232,7 @@ const operatorStyles = `
   background: transparent;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .rekap-card-field-label {
@@ -3248,10 +3251,7 @@ const operatorStyles = `
 
 .rekap-card-footer {
   margin-top: 0;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .modal-backdrop {
