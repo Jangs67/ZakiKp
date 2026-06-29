@@ -3167,10 +3167,13 @@ const operatorStyles = `
 }
 
 .rekap-card-grid {
-  display: grid;
+  display: flex;
   gap: 18px;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 12px;
   margin-top: 18px;
+  scroll-behavior: smooth;
 }
 
 .rekap-card {
@@ -3180,6 +3183,9 @@ const operatorStyles = `
   padding: 22px;
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+  width: 320px;
+  min-width: 320px;
 }
 
 .rekap-card:hover {
