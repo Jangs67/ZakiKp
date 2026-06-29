@@ -1137,52 +1137,52 @@ function RekapStudentCards({
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-100">
-      <table className="w-full border-collapse bg-white">
-        <thead className="bg-slate-50">
-          <tr>
-            <th className="p-4 text-left text-sm font-black text-slate-500">Nama</th>
-            <th className="p-4 text-left text-sm font-black text-slate-500">NISN</th>
-            <th className="p-4 text-left text-sm font-black text-slate-500">Kelas</th>
-            <th className="p-4 text-left text-sm font-black text-slate-500">Nominal</th>
-            <th className="p-4 text-left text-sm font-black text-slate-500">Status</th>
-            <th className="p-4 text-left text-sm font-black text-slate-500">Bukti</th>
-          </tr>
-        </thead>
+    <div className="space-y-2 max-h-[600px] overflow-y-auto rounded-2xl border border-slate-100 p-2">
+      {students.map((student, index) => {
+        const status = getStatus(student);
+        const payment = getPaymentByStudent(student);
 
-        <tbody>
-          {students.map((student, index) => {
-            const status = getStatus(student);
-            const payment = getPaymentByStudent(student);
+        return (
+          <div
+            key={index}
+            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition"
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-black text-slate-900 truncate">{student.nama}</p>
+              <p className="text-xs text-slate-500">NISN: {student.nisn}</p>
+            </div>
 
-            return (
-              <tr key={index} className="border-t border-slate-100">
-                <td className="p-4 font-black">{student.nama}</td>
-                <td className="p-4">{student.nisn}</td>
-                <td className="p-4">{student.kelas}</td>
-                <td className="p-4">{formatRupiah(getNominal(student))}</td>
-                <td className="p-4">
-                  <StatusBadge status={status} />
-                </td>
-                <td className="p-4">
-                  {payment?.proof ? (
-                    <button
-                      onClick={() => onViewProof(payment)}
-                      className="rounded-xl bg-sky-100 px-4 py-2 text-xs font-black text-sky-700"
-                    >
-                      Lihat Bukti
-                    </button>
-                  ) : (
-                    <span className="text-xs font-bold text-slate-400">
-                      Belum ada
-                    </span>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            <div className="flex-shrink-0 text-center">
+              <p className="text-xs text-slate-500">Kelas</p>
+              <p className="text-sm font-black text-slate-900">{student.kelas}</p>
+            </div>
+
+            <div className="flex-shrink-0 text-center">
+              <p className="text-xs text-slate-500">Nominal</p>
+              <p className="text-sm font-black text-slate-900">{formatRupiah(getNominal(student))}</p>
+            </div>
+
+            <div className="flex-shrink-0">
+              <StatusBadge status={status} />
+            </div>
+
+            <div className="flex-shrink-0">
+              {payment?.proof ? (
+                <button
+                  onClick={() => onViewProof(payment)}
+                  className="rounded-xl bg-sky-100 px-3 py-2 text-xs font-black text-sky-700"
+                >
+                  Lihat Bukti
+                </button>
+              ) : (
+                <span className="text-xs font-bold text-slate-400">
+                  Belum ada
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
