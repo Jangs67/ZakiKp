@@ -1137,7 +1137,7 @@ function RekapStudentCards({
   }
 
   return (
-    <div className="space-y-2 max-h-[600px] overflow-y-auto rounded-2xl border border-slate-100 p-2">
+    <div className="grid grid-cols-1 gap-4 overflow-y-auto rounded-2xl border border-slate-100 p-2 md:grid-cols-2 xl:grid-cols-3">
       {students.map((student, index) => {
         const status = getStatus(student);
         const payment = getPaymentByStudent(student);
@@ -1145,28 +1145,26 @@ function RekapStudentCards({
         return (
           <div
             key={index}
-            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition"
+            className="flex h-full flex-col justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition"
           >
-            <div className="flex-1 min-w-0">
+            <div>
               <p className="text-sm font-black text-slate-900 truncate">{student.nama}</p>
               <p className="text-xs text-slate-500">NISN: {student.nisn}</p>
+
+              <div className="mt-5 space-y-3 rounded-2xl bg-slate-50 p-4">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Kelas</p>
+                  <p className="text-sm font-black text-slate-900">{student.kelas}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Nominal</p>
+                  <p className="text-sm font-black text-slate-900">{formatRupiah(getNominal(student))}</p>
+                </div>
+              </div>
             </div>
 
-            <div className="flex-shrink-0 text-center">
-              <p className="text-xs text-slate-500">Kelas</p>
-              <p className="text-sm font-black text-slate-900">{student.kelas}</p>
-            </div>
-
-            <div className="flex-shrink-0 text-center">
-              <p className="text-xs text-slate-500">Nominal</p>
-              <p className="text-sm font-black text-slate-900">{formatRupiah(getNominal(student))}</p>
-            </div>
-
-            <div className="flex-shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <StatusBadge status={status} />
-            </div>
-
-            <div className="flex-shrink-0">
               {payment?.proof ? (
                 <button
                   onClick={() => onViewProof(payment)}
