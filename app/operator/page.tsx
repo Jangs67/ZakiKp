@@ -3167,9 +3167,9 @@ const operatorStyles = `
 }
 
 .rekap-card-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   max-height: 600px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -3180,72 +3180,78 @@ const operatorStyles = `
 
 .rekap-card {
   border: 1px solid #e5e7eb;
-  border-radius: 22px;
+  border-radius: 18px;
   background: #ffffff;
-  padding: 22px;
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+  padding: 18px 20px;
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 20px;
+  align-items: center;
 }
 
 .rekap-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
 }
 
 .rekap-card-header {
   display: flex;
-  justify-content: space-between;
-  gap: 18px;
-  align-items: flex-start;
-  margin-bottom: 18px;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .rekap-card-name {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 900;
   color: #0f172a;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rekap-card-subtitle {
-  margin-top: 8px;
-  font-size: 13px;
-  color: #64748b;
+  margin-top: 0;
+  font-size: 12px;
+  color: #94a3b8;
 }
 
 .rekap-card-body {
   display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
 .rekap-card-field {
-  padding: 16px;
-  border-radius: 18px;
-  background: #f8fafc;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .rekap-card-field-label {
   font-size: 10px;
   font-weight: 900;
-  color: #475569;
+  color: #94a3b8;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .rekap-card-field-value {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 900;
   color: #0f172a;
 }
 
 .rekap-card-footer {
-  margin-top: 18px;
+  margin-top: 0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .modal-backdrop {
